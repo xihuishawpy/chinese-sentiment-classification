@@ -33,7 +33,7 @@ consoleHandler.setFormatter(logFormatter)
 log.addHandler(consoleHandler)
 log.setLevel(logging.DEBUG)
 
-log.info('{}'.format(args))
+log.info(f'{args}')
 
 if not torch.cuda.is_available() and args['gpu']:
     log.warning('Cannot use gpu. use cpu instead.')
@@ -70,7 +70,7 @@ class Data:
 def load_data(input_path, max_length, training):
     text_file = os.path.join(input_path, 'train_text.npy' if training else 'test_text.npy')
     label_file = os.path.join(input_path, 'train_label.npy' if training else 'test_label.npy')
-    log.info('load data from {}, {}, training: {}'.format(text_file, label_file, training))
+    log.info(f'load data from {text_file}, {label_file}, training: {training}')
     text = np.load(text_file, allow_pickle=True)
     label = np.load(label_file, allow_pickle=True)
     label = torch.tensor([np.array(label[i]) / np.sum(label[i]) for i in range(len(label))],
@@ -86,7 +86,7 @@ def load_data(input_path, max_length, training):
             zero[:length, :] = b[:length, :]
             text_temp.append(zero)
         text = text_temp
-    log.info('loaded. total len: {}'.format(len(text)))
+    log.info(f'loaded. total len: {len(text)}')
     return Data(text, label, training)
 
 
@@ -145,22 +145,29 @@ class Stat:
         f1 = f1_score(self.gold_labels, self.pred_labels, average='macro') * 100
         norm_gold = np.asarray(self.norm_gold_labels).transpose((1, 0))
         norm_pred = np.asarray(self.norm_pred_labels).transpose((1, 0))
-        corr = sum([pearsonr(norm_gold[i], norm_pred[i])[0] for i in range(len(norm_gold))]) / len(norm_gold)
+        corr = sum(
+            pearsonr(norm_gold[i], norm_pred[i])[0] for i in range(len(norm_gold))
+        ) / len(norm_gold)
+
         return acc, f1, corr
 
     def log(self, global_step, epoch, batch):
         acc, f1, corr = self.eval()
         if self.training:
             loss = sum(self.loss) / len(self.loss)
-            log.info('step: {}, epoch: {}, batch: {}, loss: {}, acc: {}, f1: {}, r: {}'.format(
-                global_step, epoch, batch, loss, acc, f1, corr))
+            log.info(
+                f'step: {global_step}, epoch: {epoch}, batch: {batch}, loss: {loss}, acc: {acc}, f1: {f1}, r: {corr}'
+            )
+
             writer.add_scalar('train_Loss', loss, global_step)
             writer.add_scalar('train_Accuracy', acc, global_step)
             writer.add_scalar('train_F1_macro', f1, global_step)
             writer.add_scalar('train_CORR', corr, global_step)
         else:
-            log.info('step: {}, epoch: {}, acc: {}, f1: {}, r: {}'.format(
-                global_step, epoch, acc, f1, corr))
+            log.info(
+                f'step: {global_step}, epoch: {epoch}, acc: {acc}, f1: {f1}, r: {corr}'
+            )
+
             writer.add_scalar('dev_Accuracy', acc, global_step)
             writer.add_scalar('dev_F1_macro', f1, global_step)
             writer.add_scalar('dev_CORR', corr, global_step)
@@ -355,12 +362,16 @@ def main():
                            -1 if args['type'] == 'rnn' else args[args['type']]['max_length'],
                            True)
     train_data, dev_data = train_data.split(len(train_data) // 10)
-    log.info('Train: length: {}, total batch: {}, batch size: {}'.format(
-        len(train_data), (len(train_data) + batch_size - 1) // batch_size, batch_size))
-    log.info('Dev: length: {}, total batch: {}, batch size: {}'.format(
-        len(dev_data), (len(dev_data) + batch_size - 1) // batch_size, batch_size))
+    log.info(
+        f'Train: length: {len(train_data)}, total batch: {(len(train_data) + batch_size - 1) // batch_size}, batch size: {batch_size}'
+    )
 
-    log.info('Loading model {}'.format(args['type']))
+    log.info(
+        f'Dev: length: {len(dev_data)}, total batch: {(len(dev_data) + batch_size - 1) // batch_size}, batch size: {batch_size}'
+    )
+
+
+    log.info(f"Loading model {args['type']}")
     model = None
     if args['type'] == 'rnn':
         model = RNN(args)
@@ -390,7 +401,7 @@ def main():
     best_state_dict = None
 
     for epoch in range(args['num_epochs']):
-        log.info('*** epoch: {} ***'.format(epoch + 1))
+        log.info(f'*** epoch: {epoch + 1} ***')
 
         log.info('*** training ***')
         model.train()
@@ -410,7 +421,7 @@ def main():
         log.info('*** evaluating ***')
         model.eval()
         gen = BatchGen(dev_data, batch_size)
-        for batch, data in enumerate(gen):
+        for data in gen:
             with torch.no_grad():
                 pred_labels = model(data[0])
                 eval_stat.add(pred_labels, data[1], None)
@@ -428,13 +439,15 @@ def main():
     test_data = load_data(args['input_path'],
                           -1 if args['type'] == 'rnn' else args[args['type']]['max_length'],
                           False)
-    log.info('Test: length: {}, total batch: {}, batch size: {}'.format(
-        len(test_data), (len(test_data) + batch_size - 1) // batch_size, batch_size))
+    log.info(
+        f'Test: length: {len(test_data)}, total batch: {(len(test_data) + batch_size - 1) // batch_size}, batch size: {batch_size}'
+    )
+
 
     model.load_state_dict(best_state_dict)
     model.eval()
     gen = BatchGen(dev_data, batch_size)
-    for batch, data in enumerate(gen):
+    for data in gen:
         with torch.no_grad():
             pred_labels = model(data[0])
             eval_stat.add(pred_labels, data[1], None)

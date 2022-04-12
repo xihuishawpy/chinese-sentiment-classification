@@ -53,10 +53,10 @@ def create_one_batch(x, word2id, char2id, config, oov='<oov>', pad='<pad>', sort
 
     if config['token_embedder']['name'].lower() == 'cnn':
       max_chars = config['token_embedder']['max_characters_per_token']
-      assert max([len(w) for i in lst for w in x[i]]) + 2 <= max_chars
+      assert max(len(w) for i in lst for w in x[i]) + 2 <= max_chars
     elif config['token_embedder']['name'].lower() == 'lstm':
       # counting the <bow> and <eow>
-      max_chars = max([len(w) for i in lst for w in x[i]]) + 2
+      max_chars = max(len(w) for i in lst for w in x[i]) + 2
     else:
       raise ValueError('Unknown token_embedder: {0}'.format(config['token_embedder']['name']))
 
@@ -65,7 +65,7 @@ def create_one_batch(x, word2id, char2id, config, oov='<oov>', pad='<pad>', sort
     for i, x_i in enumerate(x):
       for j, x_ij in enumerate(x_i):
         batch_c[i][j][0] = bow_id
-        if x_ij == '<bos>' or x_ij == '<eos>':
+        if x_ij in ['<bos>', '<eos>']:
           batch_c[i][j][1] = char2id.get(x_ij)
           batch_c[i][j][2] = eow_id
         else:

@@ -16,10 +16,11 @@ class EmbeddingLayer(nn.Module):
       #  assert word not in word2id, "Duplicate words in pre-trained embeddings"
       #  word2id[word] = len(word2id)
 
-      logging.info("{} pre-trained word embeddings loaded.".format(len(word2id)))
+      logging.info(f"{len(word2id)} pre-trained word embeddings loaded.")
       if n_d != len(embvecs[0]):
-        logging.warning("[WARNING] n_d ({}) != word vector size ({}). Use {} for embeddings.".format(
-          n_d, len(embvecs[0]), len(embvecs[0])))
+        logging.warning(
+            f"[WARNING] n_d ({n_d}) != word vector size ({len(embvecs[0])}). Use {len(embvecs[0])} for embeddings."
+        )
         n_d = len(embvecs[0])
 
     self.word2id = word2id
@@ -33,7 +34,7 @@ class EmbeddingLayer(nn.Module):
     if embs is not None:
       weight = self.embedding.weight
       weight.data[:len(embwords)].copy_(torch.from_numpy(embvecs))
-      logging.info("embedding shape: {}".format(weight.size()))
+      logging.info(f"embedding shape: {weight.size()}")
 
     if normalize:
       weight = self.embedding.weight

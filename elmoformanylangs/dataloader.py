@@ -32,8 +32,7 @@ def load_embedding_txt(path):
   with codecs.open(path, 'r', encoding='utf-8') as fin:
     fin.readline()
     for line in fin:
-      line = line.strip()
-      if line:
+      if line := line.strip():
         parts = line.split()
         words.append(parts[0])
         vals += [float(x) for x in parts[1:]]  # equal to append

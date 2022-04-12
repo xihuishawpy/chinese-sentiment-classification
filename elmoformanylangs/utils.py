@@ -9,10 +9,9 @@ def flatten(lst):
 
 
 def deep_iter(x):
-  if isinstance(x, list) or isinstance(x, tuple):
+  if isinstance(x, (list, tuple)):
     for u in x:
-      for v in deep_iter(u):
-        yield v
+      yield from deep_iter(u)
   else:
     yield
 
