@@ -97,17 +97,16 @@ class _EncoderBase(torch.nn.Module):
                                                      sorted_sequence_lengths[:num_valid].data.tolist(),
                                                      batch_first=True)
         # Prepare the initial states.
-        if not self.stateful:
-            if hidden_state is None:
-                initial_states = hidden_state
-            elif isinstance(hidden_state, tuple):
-                initial_states = [state.index_select(1, sorting_indices)[:, :num_valid, :]
-                                  for state in hidden_state]
-            else:
-                initial_states = hidden_state.index_select(1, sorting_indices)[:, :num_valid, :]
-
-        else:
+        if self.stateful:
             initial_states = self._get_initial_states(batch_size, num_valid, sorting_indices)
+
+        elif hidden_state is None:
+            initial_states = hidden_state
+        elif isinstance(hidden_state, tuple):
+            initial_states = [state.index_select(1, sorting_indices)[:, :num_valid, :]
+                              for state in hidden_state]
+        else:
+            initial_states = hidden_state.index_select(1, sorting_indices)[:, :num_valid, :]
 
         # Actually call the module on the sorted PackedSequence.
         module_output, final_states = module(packed_sequence_input, initial_states)
@@ -226,8 +225,11 @@ class _EncoderBase(torch.nn.Module):
         if self._states is None:
             # We don't already have states, so just set the
             # ones we receive to be the current state.
-            self._states = tuple([torch.autograd.Variable(state.data)
-                                  for state in new_unsorted_states])
+            self._states = tuple(
+                torch.autograd.Variable(state.data)
+                for state in new_unsorted_states
+            )
+
         else:
             # Now we've sorted the states back so that they correspond to the original
             # indices, we need to figure out what states we need to update, because if we

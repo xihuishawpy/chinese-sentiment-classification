@@ -167,9 +167,9 @@ class LstmCellWithProjection(torch.nn.Module):
             # Actually get the slices of the batch which we
             # need for the computation at this timestep.
             # shape (batch_size, cell_size)
-            previous_memory = full_batch_previous_memory[0: current_length_index + 1].clone()
+            previous_memory = full_batch_previous_memory[:current_length_index + 1].clone()
             # Shape (batch_size, hidden_size)
-            previous_state = full_batch_previous_state[0: current_length_index + 1].clone()
+            previous_state = full_batch_previous_state[:current_length_index + 1].clone()
             # Shape (batch_size, input_size)
             timestep_input = inputs[0: current_length_index + 1, index]
 
@@ -211,7 +211,7 @@ class LstmCellWithProjection(torch.nn.Module):
 
             # Only do dropout if the dropout prob is > 0.0 and we are in training mode.
             if dropout_mask is not None:
-                timestep_output = timestep_output * dropout_mask[0: current_length_index + 1]
+                timestep_output = timestep_output * dropout_mask[:current_length_index + 1]
 
             # We've been doing computation with less than the full batch, so here we create a new
             # variable for the the whole batch at this timestep and insert the result for the

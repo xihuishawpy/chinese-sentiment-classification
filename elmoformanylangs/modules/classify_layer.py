@@ -86,19 +86,17 @@ class SampledSoftmaxLayer(nn.Module):
 
   def update_embedding_matrix(self):
     word_inp, chars_inp = [], []
-    if self.training:  
+    if self.training:
       columns = torch.LongTensor(len(self.negative_samples) + 1)
       samples = self.negative_samples
-      for i, word in enumerate(samples):
+      for word in samples:
         columns[self.word_to_column[word]] = word
-      columns[0] = 0
     else:
       columns = torch.LongTensor(len(self.all_word) + 1)
       samples = self.all_word
-      for i, word in enumerate(samples):
+      for word in samples:
         columns[self.all_word_to_column[word]] = word
-      columns[0] = 0
-
+    columns[0] = 0
     if self.use_cuda:
       columns = columns.cuda()
     self.embedding_matrix = self.column_emb.forward(columns).transpose(0, 1)
@@ -179,19 +177,17 @@ class CNNSoftmaxLayer(nn.Module):
   def update_embedding_matrix(self):
     batch_size = 2048
     word_inp, chars_inp = [], []
-    if self.training:  
-      sub_matrices = [self.oov_column]
+    id2pack = {}
+    if self.training:
       samples = self.negative_samples
-      id2pack = {}
       for i, package in enumerate(samples):
         id2pack[self.word_to_column[package[0]]] = i
     else:
-      sub_matrices = [self.oov_column]
       samples = self.all_word
-      id2pack = {}
       for i, package in enumerate(samples):
         id2pack[self.all_word_to_column[package[0]]] = i
 
+    sub_matrices = [self.oov_column]
     for i in range(len(samples)):
       # [n_samples, 1], [n_samples, 1, x], [n_samples, 1]
       word_inp.append(samples[id2pack[i + 1]][0])
@@ -204,9 +200,7 @@ class CNNSoftmaxLayer(nn.Module):
           sub_matrices[-1] = sub_matrices[-1].detach()
         word_inp, chars_inp = [], [] 
 
-    sum = 0
-    for mat in sub_matrices:
-      sum += mat.size(1)
+    sum = sum(mat.size(1) for mat in sub_matrices)
     #print(sum, len(self.word_to_column))    
     self.embedding_matrix = torch.cat(sub_matrices, dim=1)
 

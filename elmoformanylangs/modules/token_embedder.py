@@ -67,7 +67,7 @@ class ConvTokenEmbedder(nn.Module):
       filters = cnn_config['filters']
       char_embed_dim = cnn_config['char_dim']
 
-      for i, (width, num) in enumerate(filters):
+      for width, num in filters:
         conv = torch.nn.Conv1d(
           in_channels=char_embed_dim,
           out_channels=num,
@@ -77,7 +77,7 @@ class ConvTokenEmbedder(nn.Module):
         self.convolutions.append(conv)
 
       self.convolutions = nn.ModuleList(self.convolutions)
-      
+
       self.n_filters = sum(f[1] for f in filters)
       self.n_highway = cnn_config['n_highway']
 

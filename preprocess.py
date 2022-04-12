@@ -30,7 +30,7 @@ log.setLevel(logging.DEBUG)
 
 log.info('=====Pre-processing=====')
 
-log.info('{}'.format(args))
+log.info(f'{args}')
 
 if args.type == 'elmo':
     e = Embedder(args.elmo_model_path, batch_size=2)

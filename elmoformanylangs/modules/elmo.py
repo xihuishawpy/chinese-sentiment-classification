@@ -32,7 +32,7 @@ class ElmobiLm(_EncoderBase):
     self.hidden_size = hidden_size
     self.num_layers = num_layers
     self.cell_size = cell_size
-    
+
     forward_layers = []
     backward_layers = []
 
@@ -55,8 +55,8 @@ class ElmobiLm(_EncoderBase):
                                               state_projection_clip_value)
       lstm_input_size = hidden_size
 
-      self.add_module('forward_layer_{}'.format(layer_index), forward_layer)
-      self.add_module('backward_layer_{}'.format(layer_index), backward_layer)
+      self.add_module(f'forward_layer_{layer_index}', forward_layer)
+      self.add_module(f'backward_layer_{layer_index}', backward_layer)
       forward_layers.append(forward_layer)
       backward_layers.append(backward_layer)
     self.forward_layers = forward_layers
@@ -108,8 +108,7 @@ class ElmobiLm(_EncoderBase):
 
   def _lstm_forward(self, 
                     inputs: PackedSequence,
-                    initial_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> \
-      Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+                    initial_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None) -> Tuple[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
     """
     Parameters
     ----------
@@ -146,8 +145,8 @@ class ElmobiLm(_EncoderBase):
     final_states = []
     sequence_outputs = []
     for layer_index, state in enumerate(hidden_states):
-      forward_layer = getattr(self, 'forward_layer_{}'.format(layer_index))
-      backward_layer = getattr(self, 'backward_layer_{}'.format(layer_index))
+      forward_layer = getattr(self, f'forward_layer_{layer_index}')
+      backward_layer = getattr(self, f'backward_layer_{layer_index}')
 
       forward_cache = forward_output_sequence
       backward_cache = backward_output_sequence

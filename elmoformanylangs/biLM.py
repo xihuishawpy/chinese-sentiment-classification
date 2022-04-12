@@ -72,8 +72,7 @@ def read_corpus(path, max_chars=None, max_sent_len=20):
           token = token[:max_chars - 2]
         data.append(token)
       data.append('<eos>')
-  dataset = break_sentence(data, max_sent_len)
-  return dataset
+  return break_sentence(data, max_sent_len)
 
 
 def create_one_batch(x, word2id, char2id, config, oov='<oov>', pad='<pad>', sort=True):
@@ -114,16 +113,16 @@ def create_one_batch(x, word2id, char2id, config, oov='<oov>', pad='<pad>', sort
 
     if config['token_embedder']['name'].lower() == 'cnn':
       max_chars = config['token_embedder']['max_characters_per_token']
-      assert max([len(w) for i in lst for w in x[i]]) + 2 <= max_chars
+      assert max(len(w) for i in lst for w in x[i]) + 2 <= max_chars
     elif config['token_embedder']['name'].lower() == 'lstm':
-      max_chars = max([len(w) for i in lst for w in x[i]]) + 2  # counting the <bow> and <eow>
+      max_chars = max(len(w) for i in lst for w in x[i]) + 2
 
     batch_c = torch.LongTensor(batch_size, max_len, max_chars).fill_(pad_id)
 
     for i, x_i in enumerate(x):
       for j, x_ij in enumerate(x_i):
         batch_c[i][j][0] = bow_id
-        if x_ij == '<bos>' or x_ij == '<eos>':
+        if x_ij in ['<bos>', '<eos>']:
           batch_c[i][j][1] = char2id.get(x_ij)
           batch_c[i][j][2] = eow_id
         else:
@@ -287,8 +286,10 @@ class Model(nn.Module):
 
 def eval_model(model, valid):
   model.eval()
-  if model.config['classifier']['name'].lower() == 'cnn_softmax' or \
-      model.config['classifier']['name'].lower() == 'sampled_softmax':
+  if model.config['classifier']['name'].lower() in [
+      'cnn_softmax',
+      'sampled_softmax',
+  ]:
     model.classify_layer.update_embedding_matrix()
   total_loss, total_tag = 0.0, 0
   valid_w, valid_c, valid_lens, valid_masks = valid
@@ -321,21 +322,19 @@ def train_model(epoch, opt, model, optimizer,
   model.train()
 
   total_loss, total_tag = 0.0, 0
-  cnt = 0
   start_time = time.time()
 
   train_w, train_c, train_lens, train_masks = train
 
   lst = list(range(len(train_w)))
   random.shuffle(lst)
-  
+
   train_w = [train_w[l] for l in lst]
   train_c = [train_c[l] for l in lst]
   train_lens = [train_lens[l] for l in lst]
   train_masks = [train_masks[l] for l in lst]
 
-  for w, c, lens, masks in zip(train_w, train_c, train_lens, train_masks):
-    cnt += 1
+  for cnt, (w, c, lens, masks) in enumerate(zip(train_w, train_c, train_lens, train_masks), start=1):
     model.zero_grad()
     loss_forward, loss_backward = model.forward(w, c, masks)
 
@@ -400,7 +399,8 @@ def get_truncated_vocab(dataset, min_count):
       break
     i += 1
 
-  logging.info('Truncated word count: {0}.'.format(sum([count for word, count in word_count[i:]])))
+  logging.info('Truncated word count: {0}.'.format(
+      sum(count for word, count in word_count[i:])))
   logging.info('Original vocabulary size: {0}.'.format(len(word_count)))
   return word_count[:i]
 

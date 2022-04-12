@@ -177,7 +177,7 @@ def test_main():
         token, i = tokens
         char_lexicon[token] = int(i)
     char_emb_layer = EmbeddingLayer(config['token_embedder']['char_dim'], char_lexicon, fix_emb=False, embs=None)
-    logging.info('char embedding size: ' + str(len(char_emb_layer.word2id)))
+    logging.info(f'char embedding size: {len(char_emb_layer.word2id)}')
   else:
     char_lexicon = None
     char_emb_layer = None
@@ -193,7 +193,7 @@ def test_main():
         token, i = tokens
         word_lexicon[token] = int(i)
     word_emb_layer = EmbeddingLayer(config['token_embedder']['word_dim'], word_lexicon, fix_emb=False, embs=None)
-    logging.info('word embedding size: ' + str(len(word_emb_layer.word2id)))
+    logging.info(f'word embedding size: {len(word_emb_layer.word2id)}')
   else:
     word_lexicon = None
     word_emb_layer = None
